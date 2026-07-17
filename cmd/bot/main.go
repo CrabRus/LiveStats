@@ -1,13 +1,18 @@
 package main
 
 import (
-	"fmt"
+	"log"
 
+	"github.com/CrabRus/LiveStats/internal/bot"
 	"github.com/CrabRus/LiveStats/internal/config"
 )
 
 func main() {
 	cfg := config.Load()
+	twitchBot := bot.New(cfg)
 
-	fmt.Printf("Бот %s готов к подключению на канал %s\n", cfg.Bot.BotName, cfg.Bot.Channel)
+	log.Println("Запуск Twitch бота...")
+	if err := twitchBot.Start(); err != nil {
+		log.Fatalf("Ошибка при работе бота: %v", err)
+	}
 }

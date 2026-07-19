@@ -5,14 +5,31 @@ import (
 
 	"github.com/CrabRus/LiveStats/internal/bot"
 	"github.com/CrabRus/LiveStats/internal/config"
+	"github.com/CrabRus/LiveStats/internal/db"
+	"github.com/CrabRus/LiveStats/internal/repository/postgres"
+	"github.com/CrabRus/LiveStats/internal/service"
 )
 
 func main() {
 	cfg := config.Load()
-	twitchBot := bot.New(cfg)
+	database, err := db.New(cfg.Database)
+	if err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
+	defer func() {
+		if err := database.Close(); err != nil {
+			log.Printf("Error closing database: %v", err)
+		}
+	}()
 
-	log.Println("Запуск Twitch бота...")
+	wordRepo := postgres.NewWordRepository(database)
+
+	statsService := service.NewStatsService(wordRepo, cfg.Bot.Channel)
+
+	twitchBot := bot.New(cfg, statsService)
+
+	log.Printf("Starting bot for channel %s...", cfg.Bot.Channel)
 	if err := twitchBot.Start(); err != nil {
-		log.Fatalf("Ошибка при работе бота: %v", err)
+		log.Fatalf("Bot runtime error: %v", err)
 	}
 }

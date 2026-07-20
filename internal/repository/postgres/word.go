@@ -5,30 +5,18 @@ import (
 	"time"
 
 	"github.com/CrabRus/LiveStats/internal/db"
-	"github.com/CrabRus/LiveStats/internal/service"
+	"github.com/CrabRus/LiveStats/internal/domain"
 )
 
 type WordRepository struct {
 	db *db.DB
 }
 
-func NewWordRepository(database *db.DB) *WordRepository {
+func NewWordRepository(database *db.DB) domain.WordRepository {
 	return &WordRepository{db: database}
 }
 
-func (r *WordRepository) GetActiveStreamID(ctx context.Context, channel string) (string, error) {
-	var streamID string
-	query := `SELECT id FROM streams WHERE channel = $1 AND is_active = true LIMIT 1`
-
-	err := r.db.GetContext(ctx, &streamID, query, channel)
-	if err != nil {
-		return "", err
-	}
-
-	return streamID, nil
-}
-
-func (r *WordRepository) SaveStats(ctx context.Context, stats *service.PeriodStats) error {
+func (w *WordRepository) SaveStats(ctx context.Context, stats *domain.PeriodStats) error {
 	if len(stats.Words) == 0 {
 		return nil
 	}
@@ -56,6 +44,6 @@ func (r *WordRepository) SaveStats(ctx context.Context, stats *service.PeriodSta
 		})
 	}
 
-	_, err := r.db.NamedExecContext(ctx, query, rows)
+	_, err := w.db.NamedExecContext(ctx, query, rows)
 	return err
 }

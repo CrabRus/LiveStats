@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/CrabRus/LiveStats/internal/config"
+	"github.com/CrabRus/LiveStats/internal/domain"
 	"github.com/CrabRus/LiveStats/internal/service"
 	"github.com/gempir/go-twitch-irc/v4"
 )
@@ -17,7 +18,7 @@ type Bot struct {
 	client       *twitch.Client
 	statsService *service.StatsService // Используем указатель на сервис напрямую
 	mu           sync.Mutex
-	stats        *service.PeriodStats // Используем структуру из пакета service
+	stats        *domain.PeriodStats // Используем структуру из пакета service
 }
 
 func New(cfg *config.Config, svc *service.StatsService) *Bot {
@@ -27,7 +28,7 @@ func New(cfg *config.Config, svc *service.StatsService) *Bot {
 		cfg:          cfg,
 		client:       client,
 		statsService: svc,
-		stats: &service.PeriodStats{ // Используем структуру из пакета service
+		stats: &domain.PeriodStats{ // Используем структуру из пакета service
 			StreamID:  "",
 			StartedAt: time.Now(),
 			Words:     make(map[string]int),
@@ -76,7 +77,7 @@ func (b *Bot) startTicker() {
 
 		currentStats := b.stats
 
-		b.stats = &service.PeriodStats{
+		b.stats = &domain.PeriodStats{
 			StreamID:  "",
 			StartedAt: time.Now(),
 			Words:     make(map[string]int),
@@ -86,7 +87,7 @@ func (b *Bot) startTicker() {
 	}
 }
 
-func (b *Bot) sendToService(stats *service.PeriodStats) {
+func (b *Bot) sendToService(stats *domain.PeriodStats) {
 	// Создаем контекст с таймаутом на отправку в сервис/БД
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

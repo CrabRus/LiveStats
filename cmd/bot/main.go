@@ -21,10 +21,11 @@ func main() {
 			log.Printf("Error closing database: %v", err)
 		}
 	}()
-
+	streamsRepo := postgres.NewStreamsRepository(database)
 	wordRepo := postgres.NewWordRepository(database)
+	userRepo := postgres.NewUserRepository(database)
 
-	statsService := service.NewStatsService(wordRepo, cfg.Bot.Channel)
+	statsService := service.NewStatsService(streamsRepo, wordRepo, userRepo, cfg.Bot.Channel)
 
 	twitchBot := bot.New(cfg, statsService)
 

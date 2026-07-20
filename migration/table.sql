@@ -18,5 +18,15 @@ CREATE TABLE IF NOT EXISTS word_stats (
     CONSTRAINT unique_stream_time_word UNIQUE (stream_id, time_frame, word)
 );
 
+CREATE TABLE user_period_stats (
+    id SERIAL PRIMARY KEY,
+    stream_id VARCHAR(255) NOT NULL,
+    username VARCHAR(255) NOT NULL,
+    msg_count INT NOT NULL DEFAULT 0,
+    period_start TIMESTAMP NOT NULL,
+    -- Уникальный индекс, чтобы делать UPSERT за этот пятиминутный отрезок
+    UNIQUE(stream_id, username, period_start)
+);
+
 -- Индекс для быстрой выборки статистики конкретного стрима по времени
 CREATE INDEX IF NOT EXISTS idx_word_stats_stream_time ON word_stats(stream_id, time_frame);

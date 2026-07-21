@@ -1,11 +1,15 @@
 package config
 
-import "os"
+import (
+	"os"
+	"strconv"
+)
 
 type Config struct {
-	Server   ServerConfig
-	Bot      BotConfig
-	Database DatabaseConfig
+	Server    ServerConfig
+	Bot       BotConfig
+	Database  DatabaseConfig
+	TickerMin int
 }
 
 type ServerConfig struct {
@@ -48,6 +52,7 @@ func Load() *Config {
 			DBName:   getEnv("DB_NAME", "livestats_db"),
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
 		},
+		TickerMin: getEnvAsInt("TICKER_MIN", 1),
 	}
 }
 
@@ -56,4 +61,19 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+func getEnvAsInt(key string, defaultValue int) int {
+	valueStr := os.Getenv(key)
+	if valueStr == "" {
+		return defaultValue
+	}
+
+	value, err := strconv.Atoi(valueStr)
+	if err != nil {
+		// Если в .env передали не число, фолбэчимся на дефолт
+		return defaultValue
+	}
+
+	return value
 }

@@ -31,11 +31,19 @@ func (s *StatsService) ProcessPeriodStats(ctx context.Context, stats *domain.Per
 		return nil
 	}
 	stats.StreamID = streamID
+
+	// 1. Сохраняем статистику слов
 	if err := s.w.SaveStats(ctx, stats); err != nil {
 		return err
 	}
 
-	log.Printf("Успешно сохранена статистика слов для стрима %s за период %s",
+	// 2. Сохраняем статистику зрителей
+	if err := s.u.SaveStats(ctx, stats); err != nil {
+		return err
+	}
+
+	log.Printf("Успешно сохранена статистика слов и пользователей для стрима %s за период %s",
 		streamID, stats.StartedAt.Format("15:04"))
+
 	return nil
 }

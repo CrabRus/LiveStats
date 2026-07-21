@@ -16,9 +16,9 @@ import (
 type Bot struct {
 	cfg          *config.Config
 	client       *twitch.Client
-	statsService *service.StatsService // Используем указатель на сервис напрямую
+	statsService *service.StatsService
 	mu           sync.Mutex
-	stats        *domain.PeriodStats // Используем структуру из пакета service
+	stats        *domain.PeriodStats
 }
 
 func New(cfg *config.Config, svc *service.StatsService) *Bot {
@@ -28,10 +28,11 @@ func New(cfg *config.Config, svc *service.StatsService) *Bot {
 		cfg:          cfg,
 		client:       client,
 		statsService: svc,
-		stats: &domain.PeriodStats{ // Используем структуру из пакета service
+		stats: &domain.PeriodStats{
 			StreamID:  "",
 			StartedAt: time.Now(),
 			Words:     make(map[string]int),
+			UserStats: make(map[string]int),
 		},
 	}
 
@@ -56,10 +57,21 @@ func (b *Bot) _OnPrivateMessage(message twitch.PrivateMessage) {
 	}
 
 	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	if b.stats.Words == nil {
+		b.stats.Words = make(map[string]int)
+	}
+	if b.stats.UserStats == nil {
+		b.stats.UserStats = make(map[string]int)
+	}
+
 	for _, word := range words {
 		b.stats.Words[word]++
 	}
-	b.mu.Unlock()
+
+	username := message.User.Name
+	b.stats.UserStats[username]++
 }
 
 func (b *Bot) Start() error {
@@ -69,7 +81,7 @@ func (b *Bot) Start() error {
 }
 
 func (b *Bot) startTicker() {
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(time.Duration(b.cfg.TickerMin) * time.Minute)
 	defer ticker.Stop()
 
 	for range ticker.C {
@@ -88,11 +100,9 @@ func (b *Bot) startTicker() {
 }
 
 func (b *Bot) sendToService(stats *domain.PeriodStats) {
-	// Создаем контекст с таймаутом на отправку в сервис/БД
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Передаем собранные данные в слой бизнес-логики
 	if err := b.statsService.ProcessPeriodStats(ctx, stats); err != nil {
 		log.Printf("Ошибка при обработке статистики сервисом: %v", err)
 	}

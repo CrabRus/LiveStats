@@ -9,6 +9,7 @@ type WordRepository interface {
 }
 
 type UserRepository interface {
+	SaveStats(ctx context.Context, stats *PeriodStats) error
 }
 
 type StreamsRepository interface {
